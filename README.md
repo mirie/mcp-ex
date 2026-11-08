@@ -18,7 +18,7 @@ The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (curre
 
 ### Step 1: Configure the environment variables
 
-1. Create or edit the `.env` file in the project root and verify that the following variables are set correctly:
+1. Copy `.env.example` to `.env` in the project root (`cp .env.example .env`), then verify that the following variables are set correctly:
 
    ```bash
    ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key

@@ -19,9 +19,9 @@ The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (curre
 
 1. Create or edit the `.env` file in the project root and verify that the following variables are set correctly:
 
-```
-ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key
-```
+   ```bash
+   ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key
+   ```
 
 ### Step 2: Install dependencies
 
@@ -31,49 +31,49 @@ ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key
 
 1. Install uv, if not already installed:
 
-```bash
-pip install uv
-```
+   ```bash
+   pip install uv
+   ```
 
 2. Create and activate a virtual environment:
 
-```bash
-uv venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
+   ```bash
+   uv venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
 3. Install dependencies:
 
-```bash
-uv pip install -e .
-```
+   ```bash
+   uv pip install -e .
+   ```
 
 4. Run the project
 
-```bash
-uv run main.py
-```
+   ```bash
+   uv run main.py
+   ```
 
 #### Option 2: Setup without uv
 
 1. Create and activate a virtual environment:
 
-```bash
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
+   ```bash
+   python -m venv .venv
+   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+   ```
 
 2. Install dependencies:
 
-```bash
-pip install anthropic python-dotenv prompt-toolkit "mcp[cli]==1.8.0"
-```
+   ```bash
+   pip install anthropic python-dotenv prompt-toolkit "mcp[cli]>=2.3.0,<3"
+   ```
 
 3. Run the project
 
-```bash
-python main.py
-```
+   ```bash
+   python main.py
+   ```
 
 ## Usage
 
@@ -85,7 +85,7 @@ Simply type your message and press Enter to chat with the model.
 
 Use the @ symbol followed by a document ID to include document content in your query:
 
-```
+```text
 > Tell me about @deposition.md
 ```
 
@@ -93,7 +93,7 @@ Use the @ symbol followed by a document ID to include document content in your q
 
 Use the / prefix to execute commands defined in the MCP server:
 
-```
+```text
 > /summarize deposition.md
 ```
 

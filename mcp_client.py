@@ -2,8 +2,7 @@ import sys
 import asyncio
 from typing import Any
 from contextlib import AsyncExitStack
-from mcp import ClientSession, StdioServerParameters, types
-from mcp.client.stdio import stdio_client
+from mcp import Client, ClientSession, StdioServerParameters, types
 
 
 class MCPClient:
@@ -16,35 +15,45 @@ class MCPClient:
         self._command = command
         self._args = args
         self._env = env
-        self._session: ClientSession | None = None
+        self._client: Client | None = None
         self._exit_stack: AsyncExitStack = AsyncExitStack()
 
-    # TUTORIAL DRIFT (mcp v1 -> v2): the connection pattern here is unchanged.
-    #   `stdio_client` + `ClientSession` + `initialize()` inside an AsyncExitStack
-    #   works as in 1.x (v2 negotiates protocol 2025-11-25 over this path).
-    #   New in 2.x (optional, not used here): a higher-level `mcp.Client` that
-    #   takes `StdioServerParameters` directly and defaults to mode="auto".
+    # TUTORIAL DRIFT (mcp v1 -> v2): connect via the high-level `Client`.
+    #   Old (mcp 1.x, what the tutorial uses):
+    #       from mcp.client.stdio import stdio_client
+    #       stdio_transport = await self._exit_stack.enter_async_context(
+    #           stdio_client(server_params)
+    #       )
+    #       _stdio, _write = stdio_transport
+    #       self._session = await self._exit_stack.enter_async_context(
+    #           ClientSession(_stdio, _write)
+    #       )
+    #       await self._session.initialize()
+    #
+    #   New (mcp 2.x): `Client` accepts `StdioServerParameters` directly. It
+    #       starts the server subprocess, builds the session, and runs the
+    #       connection handshake itself when entered (mode="auto" by default:
+    #       it tries the newer `server/discover` handshake, then falls back to
+    #       `initialize`). No `stdio_client`, no manual `ClientSession`, no
+    #       explicit `initialize()`.
+    #   `self._client.session` is the underlying `ClientSession`, which
+    #   `session()` below returns, so `self.session().list_tools()` etc. still work.
     async def connect(self) -> None:
         server_params = StdioServerParameters(
             command=self._command,
             args=self._args,
             env=self._env,
         )
-        stdio_transport = await self._exit_stack.enter_async_context(
-            stdio_client(server_params)
+        self._client = await self._exit_stack.enter_async_context(
+            Client(server_params)
         )
-        _stdio, _write = stdio_transport
-        self._session = await self._exit_stack.enter_async_context(
-            ClientSession(_stdio, _write)
-        )
-        await self._session.initialize()
 
     def session(self) -> ClientSession:
-        if self._session is None:
+        if self._client is None:
             raise ConnectionError(
                 "Client session not initialized. Call connect() first."
             )
-        return self._session
+        return self._client.session
 
     async def list_tools(self) -> list[types.Tool]:
         # TODO: Return a list of tools defined by the MCP server
@@ -106,7 +115,7 @@ class MCPClient:
 
     async def cleanup(self) -> None:
         await self._exit_stack.aclose()
-        self._session = None
+        self._client = None
 
     async def __aenter__(self):
         await self.connect()

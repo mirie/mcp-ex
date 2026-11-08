@@ -11,6 +11,7 @@ The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (curre
 ## Prerequisites
 
 - Python 3.10+
+- [uv](https://docs.astral.sh/uv/)
 - Anthropic API Key
 
 ## Setup
@@ -21,59 +22,20 @@ The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (curre
 
    ```bash
    ANTHROPIC_API_KEY=""  # Enter your Anthropic API secret key
+   CLAUDE_MODEL=""       # Enter the Claude model ID to use
    ```
 
-### Step 2: Install dependencies
+### Step 2: Install and run
 
-#### Option 1: Setup with uv (Recommended)
+This project uses [uv](https://docs.astral.sh/uv/) to manage the virtual environment and dependencies. Install uv if you don't have it (see the [installation guide](https://docs.astral.sh/uv/getting-started/installation/)), then run:
 
-[uv](https://github.com/astral-sh/uv) is a fast Python package installer and resolver.
+```bash
+uv run main.py
+```
 
-1. Install uv, if not already installed:
+`uv run` creates `.venv` and installs the locked dependencies from `uv.lock` on first use, so there is no need to create or activate a virtual environment yourself. To install the dependencies without running anything, use `uv sync`.
 
-   ```bash
-   pip install uv
-   ```
-
-2. Create and activate a virtual environment:
-
-   ```bash
-   uv venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-
-   ```bash
-   uv pip install -e .
-   ```
-
-4. Run the project
-
-   ```bash
-   uv run main.py
-   ```
-
-#### Option 2: Setup without uv
-
-1. Create and activate a virtual environment:
-
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-   ```
-
-2. Install dependencies:
-
-   ```bash
-   pip install anthropic python-dotenv prompt-toolkit "mcp[cli]>=2.3.0,<3"
-   ```
-
-3. Run the project
-
-   ```bash
-   python main.py
-   ```
+To add or remove a dependency, use `uv add <package>` or `uv remove <package>` rather than `pip install`, so that `pyproject.toml` and `uv.lock` stay in sync.
 
 ## Usage
 
@@ -111,6 +73,14 @@ To fully implement the MCP features:
 
 1. Complete the TODOs in `mcp_server.py`
 2. Implement the missing functionality in `mcp_client.py`
+
+### Testing the MCP Server on Its Own
+
+To try the server's tools without the chat app, open it in the MCP Inspector (requires Node.js):
+
+```bash
+uv run mcp dev mcp_server.py
+```
 
 ### Linting and Typing Check
 

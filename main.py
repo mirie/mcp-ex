@@ -29,11 +29,7 @@ async def main():
     server_scripts = sys.argv[1:]
     clients = {}
 
-    command, args = (
-        ("uv", ["run", "mcp_server.py"])
-        if os.getenv("USE_UV", "0") == "1"
-        else ("python", ["mcp_server.py"])
-    )
+    command, args = "uv", ["run", "mcp_server.py"]
 
     async with AsyncExitStack() as stack:
         doc_client = await stack.enter_async_context(

@@ -81,17 +81,25 @@ class MCPClient:
 
     async def call_tool(
         self, tool_name: str, tool_input: dict
-    ) -> types.CallToolResult | None:
-        # TODO: Call a particular tool and return the result
-        #   TUTORIAL DRIFT (mcp v1 -> v2):
-        #     - `await self.session().call_tool(tool_name, tool_input)` is unchanged.
-        #     - Old (1.x): check `result.isError`; `result.structuredContent`.
-        #       New (2.x): `result.is_error`; `result.structured_content`.
-        #     - Tool failures still come back as a normal result with
-        #       `is_error=True` (they are not raised). New (2.x): the message is
-        #       only readable if the server raised `ToolError`; a plain
-        #       exception arrives as "Error executing tool <name>".
-        return None
+    ) -> types.CallToolResult:
+        """Call a tool on the MCP server and return its result as-is.
+
+        Tool failures are not raised. An unknown tool, invalid arguments, or
+        an error raised inside the tool all come back as a normal result with
+        `is_error=True` and the message in `content`.
+
+        Args:
+            tool_name: Name of the tool to call.
+            tool_input: Arguments for the tool, matching its input schema.
+                Use an empty dict for tools that take no arguments.
+
+        Returns:
+            The server's CallToolResult.
+
+        Raises:
+            ConnectionError: If connect() hasn't been called yet.
+        """
+        return await self.session().call_tool(tool_name, tool_input)
 
     async def list_prompts(self) -> list[types.Prompt]:
         # TODO: Return a list of prompts defined by the MCP server
@@ -143,7 +151,9 @@ async def main():
         command="uv",
         args=["run", "mcp_server.py"],
     ) as _client:
-        pass
+        result = await _client.list_tools()
+        print(result)
+        #pass
 
 
 if __name__ == "__main__":

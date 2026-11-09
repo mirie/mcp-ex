@@ -17,7 +17,7 @@ from mcp.server.mcpserver import MCPServer
 #       with a traceback on the server, and the client only sees the generic
 #       "Error executing tool <name>". To send a message the model can actually
 #       read and act on, raise `ToolError` (resources: `ResourceError`).
-from mcp.server.mcpserver.exceptions import ToolError
+from mcp.server.mcpserver.exceptions import ResourceError, ToolError
 from pydantic import Field
 
 mcp = MCPServer("DocumentMCP", log_level="ERROR")
@@ -83,9 +83,40 @@ def edit_document(
 
     docs[doc_id] = docs[doc_id].replace(old_str, new_str)
 
+@mcp.resource(
+    "docs://documents",
+    mime_type="application/json"
+)
+def list_docs() -> list[str]:
+    """Return the ids of all available documents.
 
-# TODO: Write a resource to return all doc id's
-# TODO: Write a resource to return the contents of a particular doc
+    Served at docs://documents as JSON (a list of id strings).
+    """
+    return list(docs.keys())
+
+@mcp.resource(
+    "docs://documents/{doc_id}",
+    mime_type="text/plain"
+)
+def fetch_doc(doc_id: str) -> str:
+    """Return the contents of a single document.
+
+    Served at docs://documents/{doc_id} as plain text.
+
+    Args:
+        doc_id: Id of the document to fetch (e.g. "report.pdf").
+
+    Returns:
+        The document's contents as a string.
+
+    Raises:
+        ResourceError: If no document with the given id exists.
+    """
+    if doc_id not in docs:
+        raise ResourceError(f"Doc with id {doc_id} not found")
+    return docs[doc_id]
+
+
 #   TUTORIAL DRIFT (mcp v1 -> v2), resources:
 #     - `@mcp.resource("docs://documents", mime_type="application/json")` and
 #       `@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")` are
@@ -93,8 +124,10 @@ def edit_document(
 #     - Old (1.x): raising ValueError for a missing doc id reached the client.
 #       New (2.x): raise `ResourceError` (mcp.server.mcpserver.exceptions) so the
 #       message is delivered; a plain ValueError is masked, as with tools.
-#     - New (2.x): a resource that doesn't exist now returns JSON-RPC error
-#       -32602 (invalid params) instead of a generic error.
+#     - New (2.x): a URI that matches no resource returns JSON-RPC error -32602
+#       ("Unknown resource"). A `ResourceError` raised inside a handler (e.g. a
+#       missing doc id on the template resource) arrives as -32603 with your
+#       message intact. The client sees both as `MCPError`.
 #
 # TODO: Write a prompt to rewrite a doc in markdown format
 # TODO: Write a prompt to summarize a doc

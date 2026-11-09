@@ -84,4 +84,11 @@ uv run mcp dev mcp_server.py
 
 ### Linting and Typing Check
 
-There are no lint or type checks implemented.
+Linting and formatting use [Ruff](https://docs.astral.sh/ruff/), a dev dependency:
+
+```bash
+uv run ruff check mcp_server.py mcp_client.py
+uv run ruff format mcp_server.py mcp_client.py
+```
+
+These two files are the ones with the tutorial TODOs. The rest of the starter code (`main.py`, `core/`) is left as provided and is not formatted or linted clean. There is no type checking.

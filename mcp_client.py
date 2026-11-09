@@ -56,16 +56,28 @@ class MCPClient:
         return self._client.session
 
     async def list_tools(self) -> list[types.Tool]:
-        # TODO: Return a list of tools defined by the MCP server
-        #   TUTORIAL DRIFT (mcp v1 -> v2):
-        #     - `(await self.session().list_tools()).tools` is unchanged.
-        #     - Old (1.x): `list_tools(cursor="...")` for pagination.
-        #       New (2.x): the `cursor` argument was removed; pass
-        #       `params=PaginatedRequestParams(cursor=...)` (from mcp.types)
-        #       and read `result.next_cursor` (was `nextCursor`).
-        #     - Returned `Tool` objects use snake_case: `tool.input_schema`
-        #       (was `inputSchema`), `tool.output_schema` (was `outputSchema`).
-        return []
+        """Return the tools currently exposed by the MCP server.
+
+        Follows pagination cursors, so servers that split their tool list
+        across several pages are fully covered.
+
+        Returns:
+            All tools from the server, in the order it returned them.
+
+        Raises:
+            ConnectionError: If connect() hasn't been called yet.
+        """
+        tools: list[types.Tool] = []
+        cursor: str | None = None
+        while True:
+            page = await self.session().list_tools(
+                params=types.PaginatedRequestParams(cursor=cursor)
+            )
+            tools.extend(page.tools)
+            cursor = page.next_cursor
+            if cursor is None:
+                break
+        return tools
 
     async def call_tool(
         self, tool_name: str, tool_input: dict

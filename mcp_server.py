@@ -72,7 +72,7 @@ def edit_document(
         new_str: The text to insert in place of old_str.
 
     Raises:
-        ToolError: If no document with the given id exists, or if old_str is not
+        ToolError: If no document with the given id exists, or if old_str is no
         found in the document.
 
     """
@@ -127,7 +127,7 @@ def format_document(
         doc_id: Id of the document to reformat.
 
     Returns:
-        A single user message that tells the model to reformat the document
+        A single user message that tells the model to reformat the documen
         and save it with the `edit_document` tool.
     """
     prompt = textwrap.dedent(f"""
@@ -145,14 +145,32 @@ def format_document(
     return [base.UserMessage(prompt)]
 
 
-# TODO: Write a prompt to summarize a doc
-#   TUTORIAL UPDATE (mcp v1 -> v2), prompts:
-#     - Old (1.x): `from mcp.server.fastmcp.prompts import base`
-#       New (2.x): `from mcp.server.mcpserver.prompts import base`
-#       (`base.UserMessage` and `base.AssistantMessage` are unchanged; they are
-#       also exported straight from `mcp.server.mcpserver`.)
-#     - `@mcp.prompt(name=..., description=...)` is unchanged.
-#     - New (2.x): a prompt function may also return a bare content block.
+@mcp.prompt(name="summarize", description="Summarizes the given document.")
+def summarize_document(
+    doc_id: str = Field(description="Id of the document to summarize"),
+) -> list[base.Message]:
+    """Build a prompt asking the model to summarize a document.
+
+    Args:
+        doc_id: Id of the document to summarize.
+
+    Returns:
+        A single user message that tells the model to summarize the document.
+    """
+    prompt = textwrap.dedent(f"""
+    Your goal is to summarize a document. The summary should be max 5 sentences.
+
+    The id of the document you need to summarize is:
+    <document_id>
+    {doc_id}
+    </document_id>
+
+    Use the 'read_doc_contents' tool to read the document first, then write a
+    concise summary (at most 5 sentences) covering its main points.
+    Do not edit the document.
+    """).strip()
+
+    return [base.UserMessage(prompt)]
 
 
 if __name__ == "__main__":

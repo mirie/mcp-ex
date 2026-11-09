@@ -1,7 +1,9 @@
-import sys
 import asyncio
-from typing import Any
+import json
+import sys
 from contextlib import AsyncExitStack
+from typing import Any
+
 from mcp import Client, ClientSession, StdioServerParameters, types
 
 
@@ -44,9 +46,7 @@ class MCPClient:
             args=self._args,
             env=self._env,
         )
-        self._client = await self._exit_stack.enter_async_context(
-            Client(server_params)
-        )
+        self._client = await self._exit_stack.enter_async_context(Client(server_params))
 
     def session(self) -> ClientSession:
         if self._client is None:
@@ -79,9 +79,7 @@ class MCPClient:
                 break
         return tools
 
-    async def call_tool(
-        self, tool_name: str, tool_input: dict
-    ) -> types.CallToolResult:
+    async def call_tool(self, tool_name: str, tool_input: dict) -> types.CallToolResult:
         """Call a tool on the MCP server and return its result as-is.
 
         Tool failures are not raised. An unknown tool, invalid arguments, or
@@ -117,7 +115,21 @@ class MCPClient:
         return []
 
     async def read_resource(self, uri: str) -> Any:
-        # TODO: Read a resource, parse the contents and return it
+        """Read a resource from the MCP server and parse its contents.
+
+        Args:
+            uri: URI of the resource, e.g. "docs://documents" or
+                "docs://documents/report.pdf".
+
+        Returns:
+            The parsed JSON value for JSON resources, the text for other text
+            resources, or None if the content is binary (not text).
+
+        Raises:
+            ConnectionError: If connect() hasn't been called yet.
+            MCPError: If the server rejects the read, e.g. an unknown URI
+                (-32602) or a missing document (-32603).
+        """
         #   TUTORIAL DRIFT (mcp v1 -> v2):
         #     - Old (1.x):
         #           from pydantic import AnyUrl
@@ -131,7 +143,14 @@ class MCPClient:
         #       `read_resource(uri)` directly. `resource.mimeType` is now
         #       `resource.mime_type`. `isinstance(..., types.TextResourceContents)`
         #       and `json.loads(resource.text)` are unchanged.
-        return []
+        result = await self.session().read_resource(uri)
+        resource = result.contents[0]
+
+        if isinstance(resource, types.TextResourceContents):
+            if resource.mime_type == "application/json":
+                return json.loads(resource.text)
+
+            return resource.text
 
     async def cleanup(self) -> None:
         await self._exit_stack.aclose()
@@ -153,7 +172,7 @@ async def main():
     ) as _client:
         result = await _client.list_tools()
         print(result)
-        #pass
+        # pass
 
 
 if __name__ == "__main__":

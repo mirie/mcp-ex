@@ -8,16 +8,11 @@
 #       mcp.server.fastmcp.* -> mcp.server.mcpserver.*
 #   Decorators (@mcp.tool / @mcp.resource / @mcp.prompt) and `log_level` are unchanged.
 #   (The separate PyPI package "fastmcp" is a different project and is not used here.)
-from mcp.server.mcpserver import MCPServer
+import textwrap
 
-# TUTORIAL DRIFT (mcp v1 -> v2): errors raised inside tools.
-#   Old (mcp 1.x): `raise ValueError("...")` inside a tool sent the exception
-#       text to the client as the tool's error message.
-#   New (mcp 2.x): an unexpected exception (ValueError, KeyError, ...) is logged
-#       with a traceback on the server, and the client only sees the generic
-#       "Error executing tool <name>". To send a message the model can actually
-#       read and act on, raise `ToolError` (resources: `ResourceError`).
+from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ResourceError, ToolError
+from mcp.server.mcpserver.prompts import base
 from pydantic import Field
 
 mcp = MCPServer("DocumentMCP", log_level="ERROR")
@@ -32,13 +27,12 @@ docs = {
     "spec.txt": "These specifications define the technical requirements for the equipment.",
 }
 
+
 @mcp.tool(
     name="read_doc_contents",
-    description="Read the contents of a document and return it as a string."
+    description="Read the contents of a document and return it as a string.",
 )
-def read_document(
-    doc_id: str = Field(description="Id of the document to read")
-) -> str:
+def read_document(doc_id: str = Field(description="Id of the document to read")) -> str:
     """Return the full text contents of a document.
 
     Args:
@@ -58,12 +52,14 @@ def read_document(
 
 @mcp.tool(
     name="edit_document",
-    description="Edit a document by replacing a string in the document's content with the new string"
+    description="Edit a document by replacing a string in the document's content with the new string",
 )
 def edit_document(
     doc_id: str = Field(description="Id of the document that will be edited"),
-    old_str: str = Field(description="The text to replace. Must match exactly, including white space."),
-    new_str: str = Field(description="The new text to insert in place of the old text")
+    old_str: str = Field(
+        description="The text to replace. Must match exactly, including white space."
+    ),
+    new_str: str = Field(description="The new text to insert in place of the old text"),
 ) -> None:
     """Replace occurrences of a string in a document with a new string.
 
@@ -76,17 +72,20 @@ def edit_document(
         new_str: The text to insert in place of old_str.
 
     Raises:
-        ToolError: If no document with the given id exists.
+        ToolError: If no document with the given id exists, or if old_str is not 
+        found in the document.
+
     """
     if doc_id not in docs:
         raise ToolError(f"Doc with id {doc_id} not found")
 
+    if old_str not in docs[doc_id]:
+        raise ToolError(f"Text to replace was not found in {doc_id}")
+
     docs[doc_id] = docs[doc_id].replace(old_str, new_str)
 
-@mcp.resource(
-    "docs://documents",
-    mime_type="application/json"
-)
+
+@mcp.resource("docs://documents", mime_type="application/json")
 def list_docs() -> list[str]:
     """Return the ids of all available documents.
 
@@ -94,10 +93,8 @@ def list_docs() -> list[str]:
     """
     return list(docs.keys())
 
-@mcp.resource(
-    "docs://documents/{doc_id}",
-    mime_type="text/plain"
-)
+
+@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")
 def fetch_doc(doc_id: str) -> str:
     """Return the contents of a single document.
 
@@ -117,19 +114,37 @@ def fetch_doc(doc_id: str) -> str:
     return docs[doc_id]
 
 
-#   TUTORIAL DRIFT (mcp v1 -> v2), resources:
-#     - `@mcp.resource("docs://documents", mime_type="application/json")` and
-#       `@mcp.resource("docs://documents/{doc_id}", mime_type="text/plain")` are
-#       unchanged. Decorator arguments and handler signatures are the same.
-#     - Old (1.x): raising ValueError for a missing doc id reached the client.
-#       New (2.x): raise `ResourceError` (mcp.server.mcpserver.exceptions) so the
-#       message is delivered; a plain ValueError is masked, as with tools.
-#     - New (2.x): a URI that matches no resource returns JSON-RPC error -32602
-#       ("Unknown resource"). A `ResourceError` raised inside a handler (e.g. a
-#       missing doc id on the template resource) arrives as -32603 with your
-#       message intact. The client sees both as `MCPError`.
-#
-# TODO: Write a prompt to rewrite a doc in markdown format
+@mcp.prompt(
+    name="format",
+    description="Rewrites the contents of the document in Markdown format.",
+)
+def format_document(
+    doc_id: str = Field(description="Id of the document to format"),
+) -> list[base.Message]:
+    """Build a prompt asking the model to rewrite a document in Markdown.
+
+    Args:
+        doc_id: Id of the document to reformat.
+
+    Returns:
+        A single user message that tells the model to reformat the document
+        and save it with the `edit_document` tool.
+    """
+    prompt = textwrap.dedent(f"""
+    Your goal is to reformat a document to be written with markdown syntax.
+
+    The id of the document you need to reformat is:
+    <document_id>
+    {doc_id}
+    </document_id>
+
+    Add in headers, bullet points, tables, etc as necessary. Feel free to add in structure.
+    Use the 'edit_document' tool to edit the document after the document has been reformatted.
+    """).strip()
+
+    return [base.UserMessage(prompt)]
+
+
 # TODO: Write a prompt to summarize a doc
 #   TUTORIAL DRIFT (mcp v1 -> v2), prompts:
 #     - Old (1.x): `from mcp.server.fastmcp.prompts import base`

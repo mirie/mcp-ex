@@ -20,7 +20,7 @@ class MCPClient:
         self._client: Client | None = None
         self._exit_stack: AsyncExitStack = AsyncExitStack()
 
-    # TUTORIAL DRIFT (mcp v1 -> v2): connect via the high-level `Client`.
+    # TUTORIAL UPDATE (mcp v1 -> v2): connect via the high-level `Client`.
     #   Old (mcp 1.x, what the tutorial uses):
     #       from mcp.client.stdio import stdio_client
     #       stdio_transport = await self._exit_stack.enter_async_context(
@@ -100,19 +100,41 @@ class MCPClient:
         return await self.session().call_tool(tool_name, tool_input)
 
     async def list_prompts(self) -> list[types.Prompt]:
-        # TODO: Return a list of prompts defined by the MCP server
-        return []
+        """Return the prompts defined by the MCP server.
 
-    async def get_prompt(self, prompt_name, args: dict[str, str]):
-        # TODO: Get a particular prompt defined by the MCP server
-        #   TUTORIAL DRIFT (mcp v1 -> v2):
-        #     - `(await self.session().get_prompt(prompt_name, args)).messages`
-        #       is unchanged.
-        #     - Fields on prompt/message types are snake_case in 2.x (was camelCase),
-        #       e.g. `PromptMessage.content`, `GetPromptResult.messages` are the
-        #       same single words, but any multi-word field (e.g. `mimeType` on
-        #       embedded resources) is now `mime_type`.
-        return []
+        Follows pagination cursors, so every page is included.
+
+        Raises:
+            ConnectionError: If connect() hasn't been called yet.
+        """
+        prompts: list[types.Prompt] = []
+        cursor: str | None = None
+        while True:
+            page = await self.session().list_prompts(
+                params=types.PaginatedRequestParams(cursor=cursor)
+            )
+            prompts.extend(page.prompts)
+            cursor = page.next_cursor
+            if cursor is None:
+                break
+        return prompts
+
+    async def get_prompt(
+        self, prompt_name, args: dict[str, str]
+    ) -> list[types.PromptMessage]:
+        """Return the messages for a prompt, filled in with the given arguments.
+
+        Args:
+            prompt_name: Name of the prompt, e.g. "format".
+            args: Values for the prompt's arguments, e.g. {"doc_id": "plan.md"}.
+
+        Raises:
+            ConnectionError: If connect() hasn't been called yet.
+            MCPError: If the prompt doesn't exist or a required argument is
+                missing. The server's reason is not passed to the client.
+        """
+        result = await self.session().get_prompt(prompt_name, args)
+        return result.messages
 
     async def read_resource(self, uri: str) -> Any:
         """Read a resource from the MCP server and parse its contents.
@@ -130,7 +152,7 @@ class MCPClient:
             MCPError: If the server rejects the read, e.g. an unknown URI
                 (-32602) or a missing document (-32603).
         """
-        #   TUTORIAL DRIFT (mcp v1 -> v2):
+        #   TUTORIAL UPDATE (mcp v1 -> v2):
         #     - Old (1.x):
         #           from pydantic import AnyUrl
         #           result = await self.session().read_resource(AnyUrl(uri))

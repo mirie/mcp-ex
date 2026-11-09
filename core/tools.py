@@ -16,7 +16,7 @@ class ToolManager:
                 {
                     "name": t.name,
                     "description": t.description,
-                    # TUTORIAL DRIFT (mcp v1 -> v2): protocol fields are snake_case now.
+                    # TUTORIAL UPDATE (mcp v1 -> v2): protocol fields are snake_case now.
                     #   Old (mcp 1.x): "input_schema": t.inputSchema
                     #   New (mcp 2.x): t.input_schema  (camelCase attribute access
                     #   raises AttributeError). The JSON on the wire is still
@@ -90,7 +90,7 @@ class ToolManager:
                     item.text for item in items if isinstance(item, TextContent)
                 ]
                 content_json = json.dumps(content_list)
-                # TUTORIAL DRIFT (mcp v1 -> v2): `isError` is now `is_error`.
+                # TUTORIAL UPDATE (mcp v1 -> v2): `isError` is now `is_error`.
                 #   Old (mcp 1.x): `if tool_output and tool_output.isError`
                 #   New (mcp 2.x): `tool_output.is_error` (camelCase raises AttributeError).
                 tool_result_part = cls._build_tool_result_part(
@@ -103,7 +103,7 @@ class ToolManager:
             except Exception as e:
                 error_message = f"Error executing tool '{tool_name}': {e}"
                 print(error_message)
-                # TUTORIAL DRIFT (mcp v1 -> v2): same rename as above.
+                # TUTORIAL UPDATE (mcp v1 -> v2): same rename as above.
                 #   Old (mcp 1.x): `tool_output.isError`
                 #   New (mcp 2.x): `tool_output.is_error`
                 tool_result_part = cls._build_tool_result_part(

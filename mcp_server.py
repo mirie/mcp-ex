@@ -1,4 +1,4 @@
-# TUTORIAL DRIFT (mcp v1 -> v2): server class renamed.
+# TUTORIAL UPDATE (mcp v1 -> v2): server class renamed.
 #   Old (mcp 1.x, what the tutorial uses):
 #       from mcp.server.fastmcp import FastMCP
 #       mcp = FastMCP("DocumentMCP", log_level="ERROR")
@@ -72,7 +72,7 @@ def edit_document(
         new_str: The text to insert in place of old_str.
 
     Raises:
-        ToolError: If no document with the given id exists, or if old_str is not 
+        ToolError: If no document with the given id exists, or if old_str is not
         found in the document.
 
     """
@@ -146,7 +146,7 @@ def format_document(
 
 
 # TODO: Write a prompt to summarize a doc
-#   TUTORIAL DRIFT (mcp v1 -> v2), prompts:
+#   TUTORIAL UPDATE (mcp v1 -> v2), prompts:
 #     - Old (1.x): `from mcp.server.fastmcp.prompts import base`
 #       New (2.x): `from mcp.server.mcpserver.prompts import base`
 #       (`base.UserMessage` and `base.AssistantMessage` are unchanged; they are

@@ -6,7 +6,7 @@ MCP Chat is a command-line interface application that enables interactive chat c
 
 I'm following this tutorial: [Introduction to Model Context Protocol](https://anthropic-partners.skilljar.com/introduction-to-model-context-protocol/) (Anthropic Skilljar).
 
-The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (currently 2.3.0). Where the code differs from the tutorial, there's a `TUTORIAL DRIFT (mcp v1 -> v2)` comment with the old version and what 2.x expects. Search for that phrase to find them all.
+The tutorial is written for `mcp` 1.x, but this project runs on `mcp` 2.x (currently 2.3.0). Where the code differs from the tutorial, there's a `TUTORIAL UPDATE (mcp v1 -> v2)` comment with the old version and what 2.x expects. Search for that phrase to find them all.
 
 ## Prerequisites
 

@@ -158,7 +158,7 @@ def summarize_document(
         A single user message that tells the model to summarize the document.
     """
     prompt = textwrap.dedent(f"""
-    Your goal is to summarize a document. The summary should be max 5 sentences.
+    Your goal is to summarize a document.
 
     The id of the document you need to summarize is:
     <document_id>
